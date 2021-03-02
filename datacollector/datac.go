@@ -8,6 +8,7 @@ import (
 )
 
 type DataCollector struct {
+	WriteToFile bool
 }
 
 func New() *DataCollector {
@@ -19,7 +20,7 @@ func New() *DataCollector {
 
 // Collect should collect all information being requested
 func (d *DataCollector) Collect() error {
-	if err := d.FindAllLinks("https://en.wikipedia.org/wiki/Nilgai"); err != nil {
+	if err := d.FindAllLinks("https://stackoverflow.com/questions/13573269/convert-string-to-byte"); err != nil {
 		return err
 	}
 
@@ -41,11 +42,24 @@ func (d *DataCollector) FindAllLinks(url string) error {
 	}
 
 	b := string(body)
-	regex := regexp.MustCompile(`<a\s+(?:[^>]*?\s+)?href="([^"]*)">`)
+	regex := regexp.MustCompile(`href=".*"`)
+	//regex := regexp.MustCompile(`<a href=".*">`)
 	strs := regex.FindAllString(b, -1)
 
+	var out []byte
+
 	for i := 0; i < len(strs); i++ {
-		fmt.Println(strs[i])
+		out = append(out, []byte(fmt.Sprintf("%s\n", strs[i]))...)
 	}
+
+	d.Output(out)
 	return nil
+}
+
+func (d *DataCollector) Output(data []byte) {
+	if d.WriteToFile {
+		if err := ioutil.WriteFile("./output/output.html", data, 0644); err != nil {
+			panic(err)
+		}
+	}
 }
